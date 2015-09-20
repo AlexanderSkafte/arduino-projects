@@ -1,14 +1,30 @@
-
 /*
-	Author: Alexander Skafte
-	License: None
+ *	Author: Alexander Skafte
+ *	License: None
+ */
+
+/* TODO
+	- Buy and use the Real Time Clock module.
+	- Use the faster option to digitalWrite (i.e. writing to
+	  the ports directly).
 */
 
 #include <Time.h>
 
-// #define     fast dig write
-//PORT{letter} |= _BV(P{letter}{number});
-//PORT{letter} &= ~_BV(P{letter}{number});
+/* Take note! Using Serial.Print will make the light shine less brightly.*/
+#define DEBUG(var)				\
+	do {					\
+		Serial.print(#var " = ");	\
+		Serial.print(var);		\
+		Serial.print("\n");		\
+	} while (0);
+
+#undef DEBUG
+#define DEBUG(var) { }
+
+#define NOW_H	22
+#define NOW_M	9
+#define NOW_S	3
 
 #define A		(2)
 #define B		(3)
@@ -47,16 +63,6 @@ char* dec_to_bin(char bin[6], int dec, int num_bits)
 	return bin;
 }
 
-void setup()
-{
-	Serial.begin(9600);
-	pinMode(A, INPUT);
-	pinMode(B, INPUT);
-	pinMode(C, INPUT);
-	pinMode(D, INPUT);
-	pinMode(E, INPUT);
-}
-
 struct Time {
 	int	hour;
 	int	minute;
@@ -65,11 +71,10 @@ struct Time {
 
 struct Time get_time(unsigned long s)
 {
-
 	struct Time	t;
-	t.second	= s % 60;
-	t.minute	= (s / 60) % 60;
 	t.hour		= (s / (60 * 60)) % 24;
+	t.minute	= (s / 60) % 60;
+	t.second	= s % 60;
 	return t;
 }
 
@@ -77,80 +82,44 @@ unsigned long hmstos(unsigned long h,
 		     unsigned long m,
 		     unsigned long s)
 {
-	return (h * 60 * 60 + m * 60 + s);
+	return h * 60 * 60 + m * 60 + s;
 }
 
-#define NOW_H	23
-#define NOW_M	59
-#define NOW_S	55
+unsigned long current_time = hmstos(NOW_H, NOW_M, NOW_S);
+
+void setup()
+{
+	Serial.begin(9600);
+	pinMode(A, INPUT);
+	pinMode(B, INPUT);
+	pinMode(C, INPUT);
+	pinMode(D, INPUT);
+	pinMode(E, INPUT);
+	DEBUG(current_time);
+}
+
+void display_time(int row, char bin[NUM_COLS], int time)
+{
+	dec_to_bin(bin, time, NUM_COLS);
+	for (int col = 0; col < NUM_COLS; ++col) {
+		if (bin[col] == '1') {
+			light(connections[row][col]);
+		}
+	}
+}
 
 void loop()   
 {
-//	time_t	t = now();
-//	int	h = (00 + hour(t))   % 24;
-//	int	m = (00 + minute(t)) % 60;
-//	int	s = (32 + 16 + 8 + second(t)) % 60;
-
-	struct Time time =
-		get_time( hmstos(NOW_H, NOW_M, NOW_S) + second(now()) );
-
-	int	s = time.second;
-	int	m = time.minute;
-	int	h = time.hour;
+	struct Time	time	= get_time(current_time + now());
+	int		h	= time.hour;
+	int		m	= time.minute;
+	int		s	= time.second;
 
 	/* Buffer to hold hour/minute/second in binary form */
 	char bin[6];
 
-	/* Display hour */
-	dec_to_bin(bin, h, 6);
-	for (int i = 0; i < NUM_COLS; ++i) {
-		if (bin[i] == '1') {
-			light(connections[0][i]);
-		}
-	}
-
-	/* Display minute */
-	dec_to_bin(bin, m, 6);
-	for (int i = 0; i < NUM_COLS; ++i) {
-		if (bin[i] == '1') {
-			light(connections[1][i]);
-		}
-	}
-
-	/* Display second */
-	dec_to_bin(bin, s, 6);
-	for (int i = 0; i < NUM_COLS; ++i) {
-		if (bin[i] == '1') {
-			light(connections[2][i]);
-		}
-	}
+	display_time(0, bin, h);	/* Display hours on LED 1-6	*/
+	display_time(1, bin, m);	/* Display minutes on LED 7-12	*/
+	display_time(2, bin, s);	/* Display seconds on LED 13-18	*/
 }
-
-
-
-//void show_number(int n, int* row)
-//{
-//	char bin[6];
-//	dec_to_bin(bin, n, 6);
-//
-//	for (int led = 0; led < 6; ++led) {
-//		light(row[led]);
-//	}
-//}
-
-//int connections[5][4][2] = {
-//	{ {A,B}, {A,C}, {A,D}, {A,E} },
-//	{ {B,A}, {B,C}, {B,D}, {B,E} },
-//	{ {C,A}, {A,B}, {C,D}, {C,E} },
-//	{ {D,A}, {D,B}, {D,C}, {D,E} },
-//	{ {E,A}, {E,B}, {E,C}, {E,D} }
-//};
-
-//int connections[5][4][2] = {
-//	{ {B, A}, {C, A}, {D, A}, {E, A} },	// A
-//	{ {A, B}, {C, B}, {D, B}, {E, B} },	// B
-//	{ {A, C}, {B, C}, {D, C}, {E, C} },	// C
-//	{ {A, D}, {B, D}, {C, D}, {E, D} },	// D
-//	{ {A, E}, {B, E}, {C, E}, {D, E} },	// E
-//};
 
