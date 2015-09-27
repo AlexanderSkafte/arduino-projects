@@ -30,13 +30,13 @@
 /* Change to set the RTC module's internal time to the values below */
 #if 0
 	#define SET_RTC_DS3231_TIME
-	#define HOUR		0
-	#define MINUTE		0
-	#define SECOND		0
-	#define DAY_OF_WEEK	0
-	#define DAY_OF_MONTH	0
-	#define MONTH		0
-	#define YEAR		0
+	#define SECOND		10
+	#define MINUTE		22
+	#define HOUR		21
+	#define DAY_OF_WEEK	7
+	#define DAY_OF_MONTH	27
+	#define MONTH		9
+	#define YEAR		15
 #endif
 
 
@@ -84,7 +84,8 @@ void setup()
 
 #ifdef SET_RTC_DS3231_TIME	/* Set time on the RTC module */
 	Serial.println("Setting RTC time...");
-	set_DS3231_time(4, 26, 20, 7, 27, 9, 15);
+	set_DS3231_time(SECOND, MINUTE, HOUR, DAY_OF_WEEK,
+			DAY_OF_WEEK, MONTH, YEAR);
 	Serial.println("RTC time set!");
 #endif
 }
