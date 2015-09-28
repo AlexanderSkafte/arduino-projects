@@ -17,7 +17,11 @@
 	MACROS AND CONSTANTS
 \* ========================================================================== */
 
-/* Take note! Using Serial.print will make the light shine less brightly. */
+/* Take note! Using Serial.print will:
+	- Make the lights shine less brightly.
+	- Freeze when the ATmega328P-PU is not connected with serial to the
+	  computer.
+*/
 #define DEBUG(var)				\
 	do {					\
 		Serial.print(#var " = ");	\
@@ -26,30 +30,37 @@
 #undef DEBUG
 #define DEBUG(var) { }
 
-
 /* Change to set the RTC module's internal time to the values below */
 #if 0
 	#define SET_RTC_DS3231_TIME
-	#define SECOND		10
-	#define MINUTE		22
-	#define HOUR		21
-	#define DAY_OF_WEEK	7
-	#define DAY_OF_MONTH	27
+	#define SECOND		04
+	#define MINUTE		41
+	#define HOUR		4
+	#define DAY_OF_WEEK	1
+	#define DAY_OF_MONTH	28
 	#define MONTH		9
 	#define YEAR		15
 #endif
 
 
-/* Output pins on the Arduino */
-#define A		2
-#define B		3
-#define C		4
-#define D		5
-#define E		6
+/* Output pins used on the ATmega328P-PU */
+#define A		9
+#define B		10
+#define C		11
+#define D		12
+#define E		13
 
 #define NUM_PINS	5
 #define NUM_ROWS	3
 #define NUM_COLS	6
+
+/* Define all possible HIGH/LOW combinations in the circuit. */
+int connections[NUM_ROWS][NUM_COLS][2] = {
+	{ {B, A}, {C, A}, {D, A}, {E, A}, {A, B}, {C, B}, },
+	{ {D, B}, {E, B}, {A, C}, {B, C}, {D, C}, {E, C}, },
+	{ {A, D}, {B, D}, {C, D}, {E, D}, {A, E}, {B, E}, },
+};
+
 
 char*		dec_to_bin	(char bin[6], int dec, int num_bits);
 byte		to_bcd		(byte n);
@@ -82,11 +93,9 @@ void setup()
 
 	Wire.begin();
 
-#ifdef SET_RTC_DS3231_TIME	/* Set time on the RTC module */
-	Serial.println("Setting RTC time...");
+#ifdef SET_RTC_DS3231_TIME
 	set_DS3231_time(SECOND, MINUTE, HOUR, DAY_OF_WEEK,
 			DAY_OF_WEEK, MONTH, YEAR);
-	Serial.println("RTC time set!");
 #endif
 }
 
@@ -180,12 +189,6 @@ void read_DS3231_time(byte* second, byte* minute, byte* hour,
 	Circuit Control
 \* ========================================================================== */
 
-int connections[3][6][2] = {
-	{ {B, A}, {C, A}, {D, A}, {E, A}, {A, B}, {C, B}, },
-	{ {D, B}, {E, B}, {A, C}, {B, C}, {D, C}, {E, C}, },
-	{ {A, D}, {B, D}, {C, D}, {E, D}, {A, E}, {B, E}, },
-};
-
 void display_time(int row, char bin[NUM_COLS], int time)
 {
 	dec_to_bin(bin, time, NUM_COLS);
@@ -202,6 +205,7 @@ void light(int connection[2])
 	digitalWrite(connection[0], HIGH);
 	pinMode(connection[1], OUTPUT);
 	digitalWrite(connection[1], LOW);
+//	delay(300);
 	pinMode(connection[0], INPUT);
 	pinMode(connection[1], INPUT);
 }
